@@ -169,17 +169,38 @@ void handle_http_request(int fd, struct cache *cache)
     sscanf(request, "%s %s %s[\n]", req_method, req_path, req_version);
     printf("Method: %s, Path: %s, Version: %s\n", req_method, req_path, req_version);
     // If GET, handle the get endpoints
-    if (strcmp(req_method, "GET") == 0)
+    if (strcmp(request_type, "GET") == 0)
     {
-        printf("GET METHOD!\n");
-    }
-    //    Check if it's /d20 and handle that special case
-    //    Otherwise serve the requested file by calling get_file()
 
-    // (Stretch) If POST, handle the post request
-    if (strcmp(req_method, "POST") == 0)
+        if (strcmp(request_path, "/d20") == 0)
+        {
+            // Handle any programmatic endpoints here
+            get_d20(fd);
+        }
+        else
+        {
+            // Otherwise try to get a file
+            get_file(fd, cache, request_path);
+        }
+    }
+
+    else if (strcmp(request_type, "POST") == 0)
     {
-        printf("GET POST!\n");
+        // Endpoint "/save"
+        if (strcmp(request_path, "/save") == 0)
+        {
+            post_save(fd, body);
+        }
+        else
+        {
+            resp_404(fd);
+        }
+    }
+
+    else
+    {
+        fprintf(stderr, "unknown request type \"%s\"\n", request_type);
+        return;
     }
 }
 
