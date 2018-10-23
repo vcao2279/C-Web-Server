@@ -161,18 +161,26 @@ void handle_http_request(int fd, struct cache *cache)
     ///////////////////
 
     // Read the three components of the first request line
+    printf("%d\n", bytes_recvd);
+
     char req_method[8];
     char req_path[1024];
     char req_version[128];
-    sscanf(request, "%s %s %s", req_method, req_path, req_version);
+    sscanf(request, "%s %s %s[\n]", req_method, req_path, req_version);
     printf("Method: %s, Path: %s, Version: %s\n", req_method, req_path, req_version);
-    // printf("%s\n", request);
     // If GET, handle the get endpoints
-
+    if (strcmp(req_method, "GET") == 0)
+    {
+        printf("GET METHOD!\n");
+    }
     //    Check if it's /d20 and handle that special case
     //    Otherwise serve the requested file by calling get_file()
 
     // (Stretch) If POST, handle the post request
+    if (strcmp(req_method, "POST") == 0)
+    {
+        printf("GET POST!\n");
+    }
 }
 
 /**
