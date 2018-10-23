@@ -58,9 +58,25 @@ int send_response(int fd, char *header, char *content_type, void *body, int cont
     ///////////////////
     // IMPLEMENT ME! //
     ///////////////////
+    time_t t1 = time(NULL);
+    struct tm *ltime = localtime(&t1);
+
+    int response_length = sprintf(response,
+                                  "%s\n"
+                                  "Date: %s" // asctime adds its own newline
+                                  "Connection: close\n"
+                                  "Content-Length: %d\n"
+                                  "Content-Type: %s\n"
+                                  "\n" // End of HTTP header
+                                  "%s\n",
+
+                                  header,
+                                  asctime(ltime),
+                                  content_length,
+                                  content_type,
+                                  body);
 
     // Send it all!
-    int response_length = sizeof(response);
     int rv = send(fd, response, response_length, 0);
 
     if (rv < 0)
@@ -77,16 +93,13 @@ int send_response(int fd, char *header, char *content_type, void *body, int cont
 void get_d20(int fd)
 {
     // Generate a random number between 1 and 20 inclusive
-
-    ///////////////////
-    // IMPLEMENT ME! //
-    ///////////////////
+    srand(time(NULL) + getpid());
 
     // Use send_response() to send it back as text/plain data
+    char response_body[8];
+    sprintf(response_body, "%d\n", (rand() % 20) + 1);
 
-    ///////////////////
-    // IMPLEMENT ME! //
-    ///////////////////
+    send_response(fd, "HTTP/1.1 200 OK", "text/plain", response_body, strlen(response_body));
 }
 
 /**
@@ -169,10 +182,10 @@ void handle_http_request(int fd, struct cache *cache)
     sscanf(request, "%s %s %s[\n]", req_method, req_path, req_version);
     printf("Method: %s, Path: %s, Version: %s\n", req_method, req_path, req_version);
     // If GET, handle the get endpoints
-    if (strcmp(request_type, "GET") == 0)
+    if (strcmp(req_method, "GET") == 0)
     {
 
-        if (strcmp(request_path, "/d20") == 0)
+        if (strcmp(req_path, "/d20") == 0)
         {
             // Handle any programmatic endpoints here
             get_d20(fd);
@@ -180,26 +193,13 @@ void handle_http_request(int fd, struct cache *cache)
         else
         {
             // Otherwise try to get a file
-            get_file(fd, cache, request_path);
-        }
-    }
-
-    else if (strcmp(request_type, "POST") == 0)
-    {
-        // Endpoint "/save"
-        if (strcmp(request_path, "/save") == 0)
-        {
-            post_save(fd, body);
-        }
-        else
-        {
-            resp_404(fd);
+            get_file(fd, cache, req_path);
         }
     }
 
     else
     {
-        fprintf(stderr, "unknown request type \"%s\"\n", request_type);
+        fprintf(stderr, "unknown request type \"%s\"\n", req_method);
         return;
     }
 }
